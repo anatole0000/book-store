@@ -1,0 +1,27 @@
+{"level":"info","message":"Logger test: This is an info log","timestamp":"2025-05-30T07:11:41.319Z"}
+{"level":"error","message":"Logger test: This is an error log","timestamp":"2025-05-30T07:11:41.323Z"}
+{"level":"warn","message":"Logger test: This is a warning log","timestamp":"2025-05-30T07:11:41.323Z"}
+{"level":"warn","message":"Register attempt with existing email: test@example.com","timestamp":"2025-05-30T07:22:06.078Z"}
+{"level":"info","message":"New user registered: 68395ca5ecc0ae9ebe07f682 (test9@example.com)","timestamp":"2025-05-30T07:22:13.100Z"}
+{"level":"info","message":"User logged in: 68395ca5ecc0ae9ebe07f682 (test9@example.com)","timestamp":"2025-05-30T07:22:48.950Z"}
+{"level":"info","message":"User account deleted: 68395ca5ecc0ae9ebe07f682","timestamp":"2025-05-30T07:23:23.587Z"}
+{"level":"warn","message":"Register attempt with existing email: test@example.com","timestamp":"2025-05-30T09:23:41.490Z"}
+{"level":"info","message":"New user registered: 68397925446159cc195f3e11 (testsix@example.com)","timestamp":"2025-05-30T09:23:49.167Z"}
+{"level":"info","message":"User logged in: 68397925446159cc195f3e11 (testsix@example.com)","timestamp":"2025-05-30T09:32:29.334Z"}
+{"level":"info","message":"New user registered: 683981ad0658b460a74d2b27 (mynewuser@example.com)","timestamp":"2025-05-30T10:00:13.268Z"}
+{"level":"info","message":"User logged in: 683981ad0658b460a74d2b27 (mynewuser@example.com)","timestamp":"2025-05-30T10:03:54.689Z"}
+{"level":"info","message":"Book 683982b10658b460a74d2b2d created by admin 683981ad0658b460a74d2b27.","timestamp":"2025-05-30T10:04:33.498Z"}
+{"level":"info","message":"Book 683982b10658b460a74d2b2d updated by admin 683981ad0658b460a74d2b27","timestamp":"2025-05-30T10:05:28.556Z"}
+{"level":"info","message":"User logged in: 683981ad0658b460a74d2b27 (mynewuser@example.com)","timestamp":"2025-05-30T22:48:29.454Z"}
+{"level":"info","message":"Book 683a35e995af4b1ca5e617ef created by admin 683981ad0658b460a74d2b27.","timestamp":"2025-05-30T22:49:13.289Z"}
+{"level":"info","message":"Book 68395681e9daae48d9afec29 updated by admin 683981ad0658b460a74d2b27","timestamp":"2025-05-30T22:52:26.066Z"}
+{"level":"info","message":"New user registered: 683a415e3a1d2921df1e248e (myquec@example.com)","timestamp":"2025-05-30T23:38:06.945Z"}
+{"level":"info","message":"User logged in: 683a415e3a1d2921df1e248e (myquec@example.com)","timestamp":"2025-05-30T23:38:50.924Z"}
+{"level":"info","message":"User logged in: 683a415e3a1d2921df1e248e (myquec@example.com)","timestamp":"2025-05-31T03:05:49.614Z"}
+{"level":"warn","message":"Register attempt with existing email: test@example.com - IP: ::1 - User-Agent: PostmanRuntime/7.44.0","timestamp":"2025-05-31T05:30:51.722Z"}
+{"level":"info","message":"New user registered: 683a9413c6ad709dd6af59c2 (testx@example.com) - IP: ::1 - User-Agent: PostmanRuntime/7.44.0","timestamp":"2025-05-31T05:30:59.258Z"}
+{"level":"info","message":"User logged in: 683a9413c6ad709dd6af59c2 (testx@example.com) - IP: ::1 - User-Agent: PostmanRuntime/7.44.0","timestamp":"2025-05-31T05:31:40.559Z"}
+{"level":"info","message":"User logged in: 683a9413c6ad709dd6af59c2 (testx@example.com) - IP: ::1 - User-Agent: PostmanRuntime/7.44.0","timestamp":"2025-05-31T05:32:04.051Z"}
+{"level":"info","message":"User account deleted: 683a9413c6ad709dd6af59c2","timestamp":"2025-05-31T05:32:14.697Z"}
+{"level":"info","message":"New user registered: 683a9515bb0459f3dfea48a0 (now@example.com) - IP: ::1 - User-Agent: PostmanRuntime/7.44.0","timestamp":"2025-05-31T05:35:17.106Z"}
+{"level":"info","message":"User logged in: 683a415e3a1d2921df1e248e (myquec@example.com) - IP: ::1 - User-Agent: PostmanRuntime/7.44.0","timestamp":"2025-05-31T07:02:37.066Z"}

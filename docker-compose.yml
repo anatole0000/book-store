@@ -1,0 +1,36 @@
+
+services:
+  redis:
+    image: redis:7
+    ports:
+      - '6379:6379'
+
+  app:
+    build: .
+    command: npm run start
+    depends_on:
+      - redis
+    environment:
+      REDIS_HOST: redis
+    ports:
+      - '3000:3000'
+
+  worker:
+    build: .
+    command: npm run start-worker
+    depends_on:
+      - redis
+    environment:
+      REDIS_HOST: redis
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - '9090:9090'
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - '3001:3000'
