@@ -29,4 +29,16 @@ router.put(
 
 router.delete('/:id', authMiddleware, authorizeRoles('admin'), bookCtrl.deleteBook);
 
+router.get('/search', bookCtrl.searchBooks);
+
+router.get('/category/:category', bookCtrl.getBooksByCategory);
+
+router.patch(
+  '/:id/status',
+  authMiddleware,
+  authorizeRoles('admin'),
+  bookCtrl.updateBookStatus
+);
+
+
 export default router;
