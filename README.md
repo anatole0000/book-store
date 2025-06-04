@@ -11,6 +11,7 @@ A RESTful API for a bookstore application featuring user authentication, book ma
 - Review creation, update, and deletion
 - Role-based access control (admin, user, deliver)
 - Email notifications (order confirmation)
+- Email & notification sending via background jobs with BullMQ & Redis queue
 - Background job processing with Redis queue
 - Monitoring with Prometheus and Grafana
 

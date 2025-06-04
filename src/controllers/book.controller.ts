@@ -1,33 +1,40 @@
-import { Request, Response, NextFunction } from 'express';
+// import { Request, Response, NextFunction } from 'express';
 import Book from '../models/book.model';
 import logger from '../utils/logger';
 import { bookQueue } from '../queues/book.queue';
 import { CreateBookSchema, UpdateBookSchema } from '../validators/book.validator';
 import { catchAsync } from '../utils/catchAsync';
 import { CustomError } from '../middlewares/errorHandler';
+import { getPagination } from '../utils/pagination';
+import { isValidObjectId } from '../utils/validateObjectId';
+import { imageQueue } from '../queues/image.queue';
 
-// Create Book
-export const createBook = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+// Tạo mới sách
+export const createBook = catchAsync(async (req, res, next) => {
   const user = req.user as { _id: string; role?: string };
 
-  if (user.role !== 'admin') {
-    const err: CustomError = new Error('Forbidden: only admin can create books');
-    err.statusCode = 403;
-    return next(err);
+  if (user.role !== 'admin') return next(new CustomError('Forbidden: only admin can create books', 403));
+
+  const price = parseNumberField(req.body.price);
+  const stock = parseNumberField(req.body.stock);
+  
+  // Gộp data body và đường dẫn ảnh nếu có upload
+  const data = { 
+    ...req.body,
+    price,
+    stock,
+  };
+  if (req.file) {
+    data.image = req.file.path;
+
+    // Thêm job resize ảnh vào queue
+    await imageQueue.add('resizeImage', { imagePath: req.file.path });
   }
 
-  const result = CreateBookSchema.safeParse(req.body);
-  if (!result.success) {
-    const err: CustomError = new Error('Invalid input');
-    err.statusCode = 400;
-    err.details = result.error.flatten();
-    return next(err);
-  }
+  const result = CreateBookSchema.safeParse(data);
+  if (!result.success) return next(new CustomError('Invalid input', 400, result.error.flatten()));
 
-  const book = new Book(req.body);
-  await book.save();
-
-  logger.info(`Book ${book._id} created by admin ${user._id}.`);
+  const book = await new Book(data).save();
 
   await bookQueue.add('sendNewBookEmail', {
     bookId: book._id,
@@ -35,209 +42,112 @@ export const createBook = catchAsync(async (req: Request, res: Response, next: N
     bookTitle: book.title,
   });
 
+  logger.info(`Book ${book._id} created by admin ${user._id}.`);
   res.status(201).json(book);
 });
 
-// Get all books with pagination
-export const getBooks = catchAsync(async (req: Request, res: Response) => {
-  const page = Math.max(1, parseInt(req.query.page as string) || 1);
-  const limit = Math.max(1, parseInt(req.query.limit as string) || 10);
-  const skip = (page - 1) * limit;
+// Lấy danh sách sách (có thể tìm kiếm + lọc category)
+export const getBooks = catchAsync(async (req, res) => {
+  const { page, limit, skip } = getPagination(req.query);
+  const { q, category } = req.query;
 
-  const totalBooks = await Book.countDocuments();
-  const books = await Book.find().skip(skip).limit(limit);
+  const filters: any = { status: 'in_stock', isAvailable: true };
 
-  res.json({
-    page,
-    limit,
-    totalBooks,
-    totalPages: Math.ceil(totalBooks / limit),
-    books,
-  });
+  if (q) {
+    const regex = new RegExp((q as string).trim(), 'i');
+    filters.$or = [{ title: regex }, { author: regex }, { category: regex }];
+  }
+
+  if (category) filters.category = (category as string).trim();
+
+  const totalBooks = await Book.countDocuments(filters);
+  const books = await Book.find(filters).skip(skip).limit(limit);
+
+  res.json({ page, limit, totalBooks, totalPages: Math.ceil(totalBooks / limit), books });
 });
 
-// Get single book by ID
-export const getBookById = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-    const err: CustomError = new Error('Invalid book ID');
-    err.statusCode = 400;
-    return next(err);
-  }
+// Lấy sách theo ID
+export const getBookById = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) return next(new CustomError('Invalid book ID', 400));
 
-  const book = await Book.findById(req.params.id);
-  if (!book) {
-    const err: CustomError = new Error('Book not found');
-    err.statusCode = 404;
-    return next(err);
-  }
+  const book = await Book.findById(id);
+  if (!book) return next(new CustomError('Book not found', 404));
 
   res.json(book);
 });
 
-// Update book
-export const updateBook = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+// Cập nhật sách
+export const updateBook = catchAsync(async (req, res, next) => {
   const user = req.user as { _id: string; role?: string };
+  if (user.role !== 'admin') return next(new CustomError('Forbidden: only admin can update books', 403));
 
-  if (user.role !== 'admin') {
-    const err: CustomError = new Error('Forbidden: only admin can update books');
-    err.statusCode = 403;
-    return next(err);
+  const { id } = req.params;
+  if (!isValidObjectId(id)) return next(new CustomError('Invalid book ID', 400));
+  
+  const price = parseNumberField(req.body.price);
+  const stock = parseNumberField(req.body.stock);
+
+  const data = {
+    ...req.body,
+    ...(price !== undefined && { price }),
+    ...(stock !== undefined && { stock }),
+  };
+  if (req.file) {
+    data.image = req.file.path;
+    await imageQueue.add('resizeImage', { imagePath: req.file.path });
   }
 
-  if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-    const err: CustomError = new Error('Invalid book ID');
-    err.statusCode = 400;
-    return next(err);
-  }
 
-  const result = UpdateBookSchema.safeParse(req.body);
-  if (!result.success) {
-    const err: CustomError = new Error('Invalid input');
-    err.statusCode = 400;
-    err.details = result.error.flatten();
-    return next(err);
-  }
+  const result = UpdateBookSchema.safeParse(data);
+  if (!result.success) return next(new CustomError('Invalid input', 400, result.error.flatten()));
 
-  const book = await Book.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  if (!book) {
-    const err: CustomError = new Error('Book not found');
-    err.statusCode = 404;
-    return next(err);
-  }
+  const book = await Book.findByIdAndUpdate(id, data, { new: true });
+  if (!book) return next(new CustomError('Book not found', 404));
 
   logger.info(`Book ${book._id} updated by admin ${user._id}`);
   res.json(book);
 });
 
-// Delete book
-export const deleteBook = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+// Xóa sách
+export const deleteBook = catchAsync(async (req, res, next) => {
   const user = req.user as { _id: string; role?: string };
+  if (user.role !== 'admin') return next(new CustomError('Forbidden: only admin can delete books', 403));
 
-  if (user.role !== 'admin') {
-    const err: CustomError = new Error('Forbidden: only admin can delete books');
-    err.statusCode = 403;
-    return next(err);
-  }
+  const { id } = req.params;
+  if (!isValidObjectId(id)) return next(new CustomError('Invalid book ID', 400));
 
-  if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-    const err: CustomError = new Error('Invalid book ID');
-    err.statusCode = 400;
-    return next(err);
-  }
-
-  const book = await Book.findByIdAndDelete(req.params.id);
-  if (!book) {
-    const err: CustomError = new Error('Book not found');
-    err.statusCode = 404;
-    return next(err);
-  }
+  const book = await Book.findByIdAndDelete(id);
+  if (!book) return next(new CustomError('Book not found', 404));
 
   logger.info(`Book ${book._id} deleted by admin ${user._id}`);
   res.json({ msg: 'Deleted successfully' });
 });
 
-// book.controller.ts
-export const searchBooks = catchAsync(async (req: Request, res: Response) => {
-  const q = (req.query.q as string)?.trim();
-
-  if (!q) {
-    return res.status(400).json({ msg: 'Query parameter q is required' });
-  }
-
-  // Tạo regex tìm kiếm không phân biệt hoa thường
-  const regex = new RegExp(q, 'i');
-
-  // Tìm sách theo nhiều trường (title, author, category)
-  const books = await Book.find({
-    $or: [
-      { title: regex },
-      { author: regex },
-      { category: regex }
-    ],
-    status: 'in_stock',
-    isAvailable: true,
-  });
-
-  res.json({
-    totalResults: books.length,
-    books,
-  });
-});
-
-// book.controller.ts
-export const getBooksByCategory = catchAsync(async (req: Request, res: Response) => {
-  const category = req.params.category.trim();
-  if (!category) {
-    return res.status(400).json({ msg: 'Category parameter is required' });
-  }
-
-  const page = Math.max(1, parseInt(req.query.page as string) || 1);
-  const limit = Math.max(1, parseInt(req.query.limit as string) || 10);
-  const skip = (page - 1) * limit;
-
-  // Đếm tổng sách theo category
-  const totalBooks = await Book.countDocuments({
-    category: category,
-    status: 'in_stock',
-    isAvailable: true,
-  });
-
-  // Lấy sách theo category với phân trang
-  const books = await Book.find({
-    category: category,
-    status: 'in_stock',
-    isAvailable: true,
-  })
-    .skip(skip)
-    .limit(limit);
-
-  res.json({
-    page,
-    limit,
-    totalBooks,
-    totalPages: Math.ceil(totalBooks / limit),
-    books,
-  });
-});
-
-export const updateBookStatus = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+// Cập nhật trạng thái sách
+export const updateBookStatus = catchAsync(async (req, res, next) => {
   const { status, isAvailable } = req.body;
+  const { id } = req.params;
 
-  if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-    const err: CustomError = new Error('Invalid book ID');
-    err.statusCode = 400;
-    return next(err);
-  }
+  if (!isValidObjectId(id)) return next(new CustomError('Invalid book ID', 400));
 
-  const allowedStatuses = ['in_stock', 'out_of_stock', 'discontinued']; // Bạn có thể sửa theo hệ thống của bạn
+  const allowedStatuses = ['in_stock', 'out_of_stock', 'discontinued'];
   const updateData: Record<string, any> = {};
 
-  if (status) {
-    if (!allowedStatuses.includes(status)) {
-      const err: CustomError = new Error('Invalid status');
-      err.statusCode = 400;
-      return next(err);
-    }
-    updateData.status = status;
-  }
+  if (status && allowedStatuses.includes(status)) updateData.status = status;
+  if (typeof isAvailable === 'boolean') updateData.isAvailable = isAvailable;
 
-  if (typeof isAvailable === 'boolean') {
-    updateData.isAvailable = isAvailable;
-  }
+  if (Object.keys(updateData).length === 0)
+    return next(new CustomError('No valid status fields provided', 400));
 
-  if (Object.keys(updateData).length === 0) {
-    const err: CustomError = new Error('No valid status fields provided');
-    err.statusCode = 400;
-    return next(err);
-  }
-
-  const book = await Book.findByIdAndUpdate(req.params.id, updateData, { new: true });
-
-  if (!book) {
-    const err: CustomError = new Error('Book not found');
-    err.statusCode = 404;
-    return next(err);
-  }
+  const book = await Book.findByIdAndUpdate(id, updateData, { new: true });
+  if (!book) return next(new CustomError('Book not found', 404));
 
   res.json({ msg: 'Book status updated successfully', book });
 });
+function parseNumberField(value: any): number | undefined {
+  const n = Number(value);
+  return isNaN(n) ? undefined : n;
+}
+
+

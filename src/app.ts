@@ -11,6 +11,7 @@ import bookRoutes from './routes/book.routes';
 import orderRoutes from './routes/order.routes';
 import reviewRoutes from './routes/review.routes';
 import { errorHandler } from './middlewares/errorHandler';
+import compression from 'compression';
 
 import client from 'prom-client';
 import './config/passport'; // 
@@ -25,6 +26,7 @@ app.use(cookieParser());
 app.use(session({ secret: 'secret', resave: false, saveUninitialized: false }));
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(compression());
 
 
 app.use('/auth', authRoutes);

@@ -25,3 +25,10 @@
 {"level":"info","message":"User account deleted: 683a9413c6ad709dd6af59c2","timestamp":"2025-05-31T05:32:14.697Z"}
 {"level":"info","message":"New user registered: 683a9515bb0459f3dfea48a0 (now@example.com) - IP: ::1 - User-Agent: PostmanRuntime/7.44.0","timestamp":"2025-05-31T05:35:17.106Z"}
 {"level":"info","message":"User logged in: 683a415e3a1d2921df1e248e (myquec@example.com) - IP: ::1 - User-Agent: PostmanRuntime/7.44.0","timestamp":"2025-05-31T07:02:37.066Z"}
+{"level":"info","message":"New user registered: 683fa954c139611c038f6b5b (admin@test.com) - IP: ::1 - User-Agent: PostmanRuntime/7.44.0","timestamp":"2025-06-04T02:03:00.184Z"}
+{"level":"info","message":"User logged in: 683fa954c139611c038f6b5b (admin@test.com) - IP: ::1 - User-Agent: PostmanRuntime/7.44.0","timestamp":"2025-06-04T02:04:59.715Z"}
+{"level":"info","message":"Book 683faa3fc139611c038f6b60 created by admin 683fa954c139611c038f6b5b.","timestamp":"2025-06-04T02:06:55.906Z"}
+{"level":"error","message":"Invalid book ID","timestamp":"2025-06-04T02:10:56.507Z"}
+{"level":"error","message":"Field name missing","timestamp":"2025-06-04T02:23:33.099Z"}
+{"level":"error","message":"ENOENT: no such file or directory, open 'C:\\Users\\ADMIN\\auth-app\\uploads\\1749003830473.jpg'","timestamp":"2025-06-04T02:23:50.479Z"}
+{"level":"error","message":"ENOENT: no such file or directory, open 'C:\\Users\\ADMIN\\auth-app\\uploads\\1749003927656.jpg'","timestamp":"2025-06-04T02:25:27.658Z"}

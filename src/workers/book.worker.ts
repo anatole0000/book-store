@@ -1,7 +1,7 @@
-// src/workers/book.worker.ts
 import { Worker } from 'bullmq';
 import IORedis from 'ioredis';
 import nodemailer from 'nodemailer';
+import NotificationModel from '../models/notification.model'; // giả sử bạn có model này
 
 const connection = new IORedis({
   host: process.env.REDIS_HOST || 'localhost',
@@ -9,8 +9,6 @@ const connection = new IORedis({
   maxRetriesPerRequest: null,
 });
 
-
-// Cấu hình nodemailer (dùng SMTP hoặc dịch vụ mail khác)
 const transporter = nodemailer.createTransport({
   host: 'smtp.example.com', // đổi thành SMTP bạn dùng
   port: 587,
@@ -26,14 +24,23 @@ const worker = new Worker(
   async (job) => {
     if (job.name === 'sendNewBookEmail') {
       const { bookId, adminId, bookTitle } = job.data;
-      console.log(`Sending mail for new book ${bookTitle} (${bookId}) created by admin ${adminId}`);
 
-      // Gửi mail cho admin hoặc người dùng nào đó
+      // Gửi mail
       await transporter.sendMail({
         from: '"Book App" <no-reply@bookapp.com>',
-        to: 'admin@bookapp.com', // hoặc email admin
+        to: 'admin@bookapp.com',
         subject: `New Book Created: ${bookTitle}`,
         text: `Admin ${adminId} vừa tạo sách mới với ID: ${bookId}`,
+      });
+
+      // Gửi notification (lưu vào DB)
+      await NotificationModel.create({
+        userId: adminId,
+        type: 'new_book',
+        message: `Bạn đã tạo sách mới: ${bookTitle}`,
+        relatedId: bookId,
+        read: false,
+        createdAt: new Date(),
       });
     }
   },
